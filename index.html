@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Strata Launcher</title>
+<link rel="icon" href="strata-sq.jpg">
+<style>
+:root{
+  --bg:#0d1117; --surface:#161b22; --surface2:#1c2129; --border:#30363d;
+  --text:#e6edf3; --text-dim:#8b949e; --accent:#58a6ff;
+  --green:#3fb950; --red:#f85149; --orange:#d29922; --purple:#bc8cff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;
+}
+header{
+  display:flex; align-items:center; gap:12px; padding:10px 16px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:5;
+}
+header img{width:34px; height:34px; border-radius:7px}
+.appver{font-size:10px;font-weight:500;color:var(--text-dim);letter-spacing:.04em;margin-left:3px;vertical-align:1px}
+h1{font-size:15px; margin:0; font-weight:600; letter-spacing:.2px}
+.spacer{flex:1}
+.pill{
+  font-size:11px; padding:3px 10px; border-radius:10px;
+  border:1px solid var(--border); background:var(--surface2); color:var(--text-dim);
+}
+.pill.up{color:var(--green); border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.12)}
+.pill.down{color:var(--red); border-color:rgba(248,81,73,.35); background:rgba(248,81,73,.10)}
+.pill.busy{color:var(--orange); border-color:rgba(210,153,34,.4); background:rgba(210,153,34,.12)}
+main{display:flex; gap:16px; padding:16px; align-items:flex-start}
+.col{display:flex; flex-direction:column; gap:16px}
+.left{width:420px; min-width:360px}
+.mid{flex:1; min-width:0}
+.third{width:360px; min-width:320px}
+.panel{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 14px}
+.panel h2{
+  font-size:11px; text-transform:uppercase; letter-spacing:.8px;
+  color:var(--text-dim); margin:0 0 10px; font-weight:600;
+}
+.h2btn{
+  float:right; margin-top:-3px; padding:2px 8px; font-size:10px; font-weight:600;
+  text-transform:none; letter-spacing:normal; border-radius:5px;
+}
+.model{
+  border:1px solid var(--border); border-radius:6px; padding:9px 11px;
+  margin-bottom:8px; cursor:pointer; background:var(--surface2);
+}
+.model:hover{border-color:var(--accent)}
+.model.sel{border-color:var(--accent); background:rgba(88,166,255,.10)}
+.model.pending{opacity:.62}
+.model.pending .name{font-weight:600}
+.model .name{font-weight:600}
+.model .meta{font-size:11px; color:var(--text-dim); margin-top:3px}
+.bad{color:var(--red)} .ok{color:var(--green)}
+.row{display:flex; align-items:center; gap:10px; margin-bottom:7px}
+.row label{flex:0 0 132px; color:var(--text-dim); font-size:12px}
+/* a box out of its bounds: red, and Launch refuses with the numbers named */
+.row input.bad{border-color:var(--red) !important; color:var(--red)}
+.row input[type=text],.row input[type=number]{
+  flex:1; background:var(--bg); color:var(--text); border:1px solid var(--border);
+  border-radius:5px; padding:5px 8px; font:inherit; font-size:12px;
+}
+.buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+button{
+  border:1px solid var(--border); background:var(--surface2); color:var(--text);
+  padding:7px 14px; border-radius:6px; cursor:pointer; font:inherit; font-weight:600; font-size:12px;
+}
+button:hover{border-color:var(--accent)}
+#launchBtn{background:rgba(63,185,80,.14); border-color:rgba(63,185,80,.45); color:var(--green)}
+#killBtn{background:rgba(248,81,73,.12); border-color:rgba(248,81,73,.4); color:var(--red)}
+button:disabled{opacity:.45; cursor:not-allowed}
+
+/* The generic button:hover above LOSES to the id rules below it (an id beats an element), so
+   these two had no hover response at all and read as dead under the cursor. They need their own
+   hover/active, and the active state is what makes a press feel like a press. */
+button:not(:disabled):active{transform:translateY(1px); filter:brightness(1.3)}
+#launchBtn:hover{background:rgba(63,185,80,.26); border-color:rgba(63,185,80,.8); box-shadow:0 0 0 1px rgba(63,185,80,.2)}
+#launchBtn:active{background:rgba(63,185,80,.4)}
+#launchBtn:disabled{background:rgba(63,185,80,.06); border-color:rgba(63,185,80,.2); color:rgba(63,185,80,.5)}
+#killBtn:hover{background:rgba(248,81,73,.24); border-color:rgba(248,81,73,.75); box-shadow:0 0 0 1px rgba(248,81,73,.18)}
+#killBtn:active{background:rgba(248,81,73,.38)}
+#killBtn:disabled{background:rgba(248,81,73,.05); border-color:rgba(248,81,73,.18); color:rgba(248,81,73,.45)}
+.quicklaunch-btn:hover{border-color:var(--orange); background:rgba(210,153,34,.3)}
+.quicklaunch-btn:active{background:rgba(210,153,34,.42)}
+pre{
+  margin:0; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:9px 11px; font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:var(--text-dim); white-space:pre-wrap; word-break:break-word;
+  max-height:300px; overflow:auto;
+}
+.kv{display:flex; gap:14px; flex-wrap:wrap; font-size:12px}
+.kv div{color:var(--text-dim)}
+.kv b{color:var(--text); font-weight:600}
+.note{font-size:11px; color:var(--text-dim); margin-top:8px}
+.warn{color:var(--orange)}
+.quicklaunch-btn{
+  background:rgba(210,153,34,.2); border-color:var(--orange); color:var(--orange);}
+/* Launch + its hover dropdown (2026-10-06): the plain path stays the default, and "Launch with
+   vision" is the same launch with the image encoder in the config. The menu is CSS-shown on hover
+   (with a small gap-bridge so moving the cursor down does not close it) and JS keeps it open while
+   the pointer is inside, so a touch/click on the button never traps the user in a menu. */
+/* Scrollbars: the llama-launcher theme (6px, transparent track, --border thumb). Copied exactly so
+   the two launchers feel identical; Chrome needs the ::-webkit-* pair and Firefox the two standard
+   properties, and without them the default light scrollbar shows up on this dark surface. */
+::-webkit-scrollbar{width:6px; height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+*{scrollbar-width:thin; scrollbar-color:var(--border) transparent}
+
+.launch-wrap{position:relative; display:inline-block}
+.launch-chev{font-size:9px; opacity:.8}
+/* The menu hangs from the BUTTON's bottom edge with NO gap (top:100%), and .launch-wrap covers the
+   button + menu, so the hover region is continuous: moving the pointer off the button onto an item
+   never crosses dead space. The earlier `top:calc(100% + 4px)` left a 4px strip that dropped the
+   hover on the way down (the menu disappeared before the pointer could roll to a menu item).
+   A visual gap without losing the hover is what the ::before bridge is for - the menu starts 4px
+   lower but the bridge keeps the pointer inside the wrap. */
+.launch-menu{
+  display:none; position:absolute; left:0; top:100%; z-index:60; margin-top:4px;
+  min-width:264px; background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45); padding:5px;
+}
+.launch-menu::before{content:''; position:absolute; left:0; right:0; top:-5px; height:5px}
+.launch-wrap:hover .launch-menu, .launch-menu.open{display:block}
+.lm-item{display:flex; flex-direction:column; gap:1px; padding:7px 9px; border-radius:6px; cursor:pointer}
+.lm-item:hover{background:var(--surface)}
+.lm-item b{font-size:12px; color:var(--text)}
+.lm-item .lm-sub{font-size:10px; color:var(--text-dim)}
+.lm-item.unavailable{opacity:.5; cursor:not-allowed}
+.lm-item.unavailable b{color:var(--text-dim)}
+.quicklaunch-btn:hover{border-color:#f0b429}
+#cmdOut{
+  margin:0; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:9px 11px; font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:var(--text); white-space:pre-wrap; word-break:break-word; max-height:190px; overflow:auto;
+}
+.cmd-split{display:flex; gap:12px; align-items:flex-start}
+.cmd-half{flex:1; min-width:0}
+.cmd-half pre{max-height:190px}
+.cmd-lbl{font-size:11px; color:var(--text-dim); margin-bottom:5px}
+.modal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.65);
+  z-index:50; align-items:center; justify-content:center;
+}
+.modal-overlay.show{display:flex}
+.modal{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  width:780px; max-width:92vw; max-height:88vh; overflow:auto;
+}
+.modal-header{
+  display:flex; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border);
+}
+.modal-header h2{font-size:14px; margin:0; color:var(--text); text-transform:none; letter-spacing:0}
+.modal-close{
+  margin-left:auto; background:none; border:none; color:var(--text-dim);
+  font-size:18px; cursor:pointer; line-height:1; padding:2px 6px;
+}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:16px}
+#quickLaunchInput{
+  width:100%; min-height:150px; background:var(--bg); color:var(--text);
+  border:1px solid var(--border); border-radius:6px; padding:11px;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
+  white-space:pre; resize:vertical;
+}
+.modal-footer{
+  display:flex; gap:8px; justify-content:flex-end; padding:12px 16px;
+  border-top:1px solid var(--border); align-items:center;
+}
+#quickLaunchError{color:var(--red); font-size:12px; margin-right:auto; display:none}
+#quickLaunchError.show{display:block}
+.ql-presets{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+.ql-preset-pill{
+  background:var(--surface2); border:1px solid var(--border); border-radius:999px;
+  padding:3px 6px 3px 10px; font-size:11px; color:var(--text-dim); cursor:pointer;
+  max-width:330px; display:inline-flex; align-items:center; gap:6px;
+}
+.ql-preset-pill:hover{border-color:var(--accent); color:var(--text)}
+.ql-preset-pill.builtin{border-color:rgba(210,153,34,.5)}
+.ql-preset-pill .x.lock{color:var(--orange); font-size:9px; letter-spacing:.05em; text-transform:uppercase; cursor:default}
+.ql-preset-pill .nm{white-space:normal; overflow-wrap:anywhere; color:var(--text); font-weight:600}
+.ql-preset-pill .pill-body{display:flex; flex-direction:column; gap:2px; min-width:0}
+.ql-preset-pill .x{color:var(--text-dim); cursor:pointer; font-size:12px}
+.ql-preset-pill .x:hover{color:var(--red)}
+.ql-cancel-btn{background:transparent; border-color:var(--border); color:var(--text-dim)}
+.ql-save-btn{background:rgba(210,153,34,.15); border-color:rgba(210,153,34,.5); color:var(--orange)}
+/* presets pills bar (llama-launcher pattern) */
+.pills-bar{display:flex; align-items:center; gap:6px}
+.scroll-arrow{
+  background:var(--surface2); border:1px solid var(--border); color:var(--text-dim);
+  border-radius:5px; cursor:pointer; font-size:11px; line-height:1; padding:5px 7px; flex-shrink:0;
+}
+.scroll-arrow:hover{border-color:var(--accent); color:var(--text)}
+.scroll-arrow.hidden{visibility:hidden}
+.pills-scroll-container{
+  flex:1; min-width:0; display:flex; gap:6px; overflow-x:auto; padding:2px 0;
+  scroll-behavior:smooth; scrollbar-width:thin;
+}
+.pills-scroll-container::-webkit-scrollbar{height:5px}
+.pills-scroll-container::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px}
+/* Two lines, never a truncated name (a long preset name should read in full rather than be cut off). The
+   name wraps on the first line and the marks sit under it; the X stays vertically centred at the right. */
+.launch-pill{
+  background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+  padding:5px 8px 5px 11px; font-size:11px; color:var(--text-dim); cursor:pointer;
+  display:inline-flex; align-items:center; gap:8px; flex-shrink:0; max-width:330px;
+}
+.launch-pill .nm{display:block; color:var(--text); font-weight:600; line-height:1.25;
+  white-space:normal; overflow-wrap:anywhere}
+.launch-pill .pill-body{display:flex; flex-direction:column; gap:2px; min-width:0}
+.launch-pill .pill-kind{align-self:flex-start}
+.launch-pill:hover{border-color:var(--accent); color:var(--text)}
+.launch-pill.active{border-color:var(--accent); background:rgba(88,166,255,.12); color:var(--text)}
+.launch-pill.builtin{border-color:rgba(210,153,34,.5); background:rgba(210,153,34,.10)}
+.launch-pill.builtin .nm{color:var(--orange); font-weight:600}
+.launch-pill.builtin.active{border-color:var(--orange); background:rgba(210,153,34,.2)}
+.launch-pill .nm{display:block; line-height:1.25}
+.pill-kind{color:var(--text-dim); font-size:9px; border:1px solid var(--border); border-radius:6px; padding:0 4px}
+.pill-delete{color:var(--text-dim); font-size:12px; line-height:1}
+.pill-delete:hover{color:var(--red)}
+.empty-note{font-size:11px; color:var(--text-dim)}
+.free-vram-btn{background:rgba(63,185,80,.12); border-color:rgba(63,185,80,.45); color:var(--green)}
+.free-vram-btn:hover{border-color:var(--green)}
+.free-vram-btn:disabled{opacity:.5}
+.hw{display:grid; grid-template-columns:auto 1fr auto; gap:8px 12px; align-items:center; font-size:12px}
+.hw .lbl{color:var(--text-dim)}
+.hw .bar{background:var(--bg); border:1px solid var(--border); border-radius:4px; height:9px; overflow:hidden}
+.hw .bar i{display:block; height:100%; background:var(--accent)}
+.hw .bar i.hi{background:var(--orange)}
+.hw .bar i.crit{background:var(--red)}
+.hw .val{color:var(--text); white-space:nowrap; font-variant-numeric:tabular-nums}
+.hw-warn{color:var(--orange); font-size:11px; margin-top:9px}
+.flags-search{
+  width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border);
+  border-radius:5px; padding:5px 8px; font:inherit; font-size:12px; margin-bottom:8px;
+}
+.flags-list{max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:3px}
+.flag-row{
+  display:flex; align-items:center; gap:8px; padding:3px 6px; border-radius:5px;
+  border:1px solid transparent;
+}
+.flag-row:hover{border-color:var(--border)}
+.flag-row.on{background:rgba(88,166,255,.08); border-color:rgba(88,166,255,.30)}
+.flag-row input[type=checkbox]{accent-color:var(--accent); flex-shrink:0}
+.flag-name{
+  font:11px ui-monospace,SFMono-Regular,Menlo,monospace; flex:0 0 186px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-dim);
+}
+.flag-row.on .flag-name{color:var(--accent)}
+.flag-row.owned{background:rgba(139,148,158,.06)}
+.flag-row.owned .flag-name{color:var(--text-dim)}
+.flag-row.owned input[type=checkbox]{opacity:.5}
+.flag-badge{
+  font-size:9px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--text-dim); border:1px solid var(--border); border-radius:4px;
+  padding:1px 4px; margin-left:6px; flex:0 0 auto;
+}
+.flag-val{
+  flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--border);
+  border-radius:4px; padding:2px 6px; font:11px ui-monospace,Menlo,monospace;
+}
+.flag-warn{color:var(--orange); font-size:10px}
+#toast{
+  position:fixed; right:18px; bottom:18px; z-index:60; max-width:440px;
+  background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--green);
+  border-radius:8px; padding:11px 14px; font-size:12px; color:var(--text);
+  box-shadow:0 6px 24px rgba(0,0,0,.45); display:none;
+}
+#toast.show{display:block}
+#toast.err{border-left-color:var(--red)}
+#toast .t{font-weight:600; margin-bottom:3px}
+</style>
+</head>
+<body>
+<header>
+  <img src="strata-256.png" alt="">
+  <h1>Strata Launcher <span class="appver">v1.2</span></h1>
+  <span class="pill" id="enginePill">engine …</span>
+  <span class="pill" id="serverPill">server down</span>
+  <div class="spacer"></div>
+  <span class="pill" id="sysPill">—</span>
+</header>
+
+<main>
+  <div class="col left">
+    <div class="panel">
+      <h2>Hardware <span id="hwCore" style="float:right;font-weight:400;text-transform:none"></span></h2>
+      <div class="hw" id="hw"></div>
+      <div class="hw-warn" id="hwWarn" style="display:none"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Launch settings</h2>
+      <div class="row"><label>context</label><input type="number" inputmode="numeric" id="context" value="262144"></div>
+      <div class="row"><label>port</label><input type="number" inputmode="numeric" id="port" value="8085"></div>
+      <div class="row"><label>thinking budget</label><input type="number" inputmode="numeric" id="reasoning_budget" value="64"></div>
+      <div class="row"><label>spec n-max</label><input type="number" inputmode="numeric" id="spec" value="4"></div>
+      <!-- inputmode="decimal" is REQUIRED for the ".": an Android keyboard (R1 Connect's WebView, a phone
+           browser) gives a type=number field a keypad with NO decimal point, so 0.5 could only ever be
+           typed as 05 - which the engine read as 5.0 and ran at 33 tok/s with every draft refused
+           (2026-10-06). step="0.05" alone does not change the phone's keypad. -->
+      <div class="row"><label>spec min-p</label><input type="number" inputmode="decimal" step="0.05" min="0" max="1" id="spec_min_p" value="0.5"></div>
+      <div class="row"><label>prefill chunk</label><input type="number" inputmode="numeric" id="prefill" value="4096"></div>
+      <div class="row"><label>host</label><input type="text" id="host" value="0.0.0.0"></div>
+      <div class="row"><label>cors origins</label><input type="text" id="cors_origins" value="http://localhost:3001,http://127.0.0.1:3001"></div>
+      <div class="buttons">
+        <button id="freeVramBtn" class="free-vram-btn" onclick="freeVram()">Free VRAM</button>
+        <span class="launch-wrap" id="launchWrap">
+          <button id="launchBtn">Launch <span class="launch-chev">▾</span></button>
+          <span class="launch-menu" id="launchMenu">
+            <span class="lm-item" id="lmPlain" onclick="launchWith(false)">
+              <b>Launch</b><span class="lm-sub">text only — what the button does now</span>
+            </span>
+            <span class="lm-item" id="lmVision" onclick="launchWith(true)">
+              <b>Launch with vision</b><span class="lm-sub" id="lmVisionSub">images too (needs the vision encoder)</span>
+            </span>
+          </span>
+        </span>
+        <button id="killBtn">Kill server</button>
+        <button id="quickLaunchBtn" class="quicklaunch-btn" onclick="openQuickLaunch()">⚡ Quick Launch</button>
+        <button id="refreshBtn">Refresh</button>
+        <button id="statsBtn" onclick="showStats()">Stats</button>
+      </div>
+      <div class="note">
+        thinking budget 0 means <b>unlimited</b> — the model will spend the whole reply thinking.
+        Launch writes a config, generates a run script, and starts the SYCL engine natively
+        (oneAPI env, VERIFY vars, required prefill and draft vocab all carried).
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Model <button id="refreshModelsBtn" class="h2btn" onclick="refreshModels()">Refresh</button></h2>
+      <div id="models"></div>
+      <div class="note" id="modelNote"></div>
+    </div>
+
+  </div>
+
+  <div class="col mid">
+    <div class="panel">
+      <h2>Presets <button id="savePresetBtn" class="h2btn" onclick="saveBuilderPreset()">+ Save current</button></h2>
+      <div class="pills-bar" id="pillsBar">
+        <button class="scroll-arrow scroll-left" id="pillsLeft" onclick="scrollPills(-1)">◀</button>
+        <div class="pills-scroll-container" id="pillsContainer"></div>
+        <button class="scroll-arrow scroll-right" id="pillsRight" onclick="scrollPills(1)">▶</button>
+      </div>
+      <div class="note">
+        A preset snapshots the settings <b>and every ticked flag</b>. Clicking a pill restores all of it.
+        Presets made from Quick Launch also carry that command.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Command <button id="copyCmdBtn" class="h2btn" onclick="copyCommand()">Copy</button></h2>
+      <div class="cmd-split">
+        <div class="cmd-half">
+          <div class="cmd-lbl">command</div>
+          <pre id="cmdOut">—</pre>
+        </div>
+        <div class="cmd-half">
+          <div class="cmd-lbl">
+            engine flags — these live in the config file, not on the command line
+            <span id="cfgPath" style="opacity:.8"></span>
+          </div>
+          <pre id="engineArgs">—</pre>
+        </div>
+      </div>
+      <div class="note">What Launch will run. Quick Launch starts from this text.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Flags <span id="flagCount" style="float:right;font-weight:400;text-transform:none"></span></h2>
+      <input class="flags-search" id="flagSearch" placeholder="filter flags…" oninput="renderFlags()">
+      <div class="flags-list" id="flagList"></div>
+      <div class="note">
+        Tick a flag to add or override it — an override replaces what the template already set.
+        Changes appear in the Command panel immediately, so nothing is hidden in the config file.
+      </div>
+    </div>
+  </div>
+
+  <div class="col third">
+    <div class="panel">
+      <h2>Live</h2>
+      <div class="kv" id="live"></div>
+      <pre id="engineLog" style="margin-top:10px">—</pre>
+    </div>
+    <div class="panel">
+      <h2>Launcher log</h2>
+      <pre id="launcherLog">—</pre>
+    </div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="quickLaunchModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚡ Quick Launch</h2>
+      <button class="modal-close" onclick="closeQuickLaunch()">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="quickLaunchInput" spellcheck="false"
+        placeholder="paste a command — it runs with the oneAPI env prepended"></textarea>
+      <div class="ql-presets" id="qlPresets"></div>
+      <div class="note" id="qlRestore" style="display:none;margin-top:6px">
+        built-ins hidden in this browser —
+        <a href="#" onclick="restoreBuiltins(); return false;" style="color:var(--accent)">restore built-ins</a>
+      </div>
+      <div class="note">
+        The oneAPI env, <b>STRATA_VERIFY_DEVICE_PLAN=1</b>, <b>STRATA_VERIFY_NO_HOST=1</b> and
+        <b>SYCL_CACHE_PERSISTENT=0</b> are prepended for you. A hand-typed Strata command dies on
+        <b>libmkl_sycl_blas.so.6</b> without them, which is the whole reason this button exists.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span id="quickLaunchError"></span>
+      <button class="ql-cancel-btn" onclick="closeQuickLaunch()">Cancel</button>
+      <button id="quickLaunchGoBtn" onclick="quickLaunchGo()">Launch</button>
+      <button class="ql-save-btn" onclick="saveQuickLaunchPreset()">Save As Preset</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><div class="t" id="toastTitle"></div><div id="toastBody"></div></div>
+
+<script>
+let MODELS = [];
+let SELECTED = null;
+
+const $ = (id) => document.getElementById(id);
+
+async function j(url, opts) {
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+function pill(el, text, cls) {
+  el.textContent = text;
+  el.className = 'pill' + (cls ? ' ' + cls : '');
+}
+
+async function loadModels() {
+  const d = await j('/api/models');
+  MODELS = d.models || [];
+  const box = $('models');
+  box.innerHTML = '';
+  if (!MODELS.length) {
+    box.innerHTML = '<div class="note bad">No Strata model installs found under ~/models</div>';
+    return;
+  }
+  MODELS.forEach((m, i) => {
+    const el = document.createElement('div');
+    const isReady = !!m.ready;
+    el.className = 'model' + (i === 0 ? ' sel' : '') + (isReady ? '' : ' pending');
+    el.innerHTML = `<div class="name">${m.label}</div>
+      <div class="meta">${m.dir.replace(/.*\//, '')}
+        &nbsp; <span class="${m.complete ? 'ok' : 'bad'}">${m.complete ? 'shards ok' : 'downloading ' + m.percent + '%'}</span>
+        &nbsp; pack <span class="${m.pack_ready ? 'ok' : 'bad'}">${m.pack_ready ? 'ok' : 'missing'}</span>
+        &nbsp; mtp <span class="${m.mtp_ready ? 'ok' : 'bad'}">${m.mtp_ready ? 'ok' : 'missing'}</span></div>
+      ${m.complete ? '' : `<div class="meta" style="color:var(--orange)">${m.present_gb} of ${m.expected_gb} GiB &nbsp; ${m.shard_state}</div>`}`;
+    el.onclick = () => {
+      document.querySelectorAll('.model').forEach(x => x.classList.remove('sel'));
+      el.classList.add('sel');
+      SELECTED = m;
+      $('modelNote').textContent = isReady
+        ? ''
+        : 'Not ready yet — Launch will refuse it.';
+      syncModelFlags();      // the four identity flags follow the model
+      updateLaunchMenu();    // the vision entry follows the model too
+      updateCommand();
+    };
+    box.appendChild(el);
+    if (i === 0) SELECTED = m;
+  });
+  syncModelFlags();          // first render: panel shows model 0's identity, not a stale set
+  updateLaunchMenu();
+}
+
+async function refresh() {
+  const s = await j('/api/state');
+  pill($('serverPill'), s.running ? 'server up :' + s.port : 'server down',
+       s.running ? 'up' : 'down');
+  const h = s.health || {};
+  if (s.running && h.model) {
+    pill($('serverPill'), `up :${s.port} · ${h.model}`, 'up');
+  }
+  const live = $('live');
+  live.innerHTML = s.running
+    ? `<div>model <b>${h.model || '?'}</b></div>
+       <div>max context <b>${h.max_context || '?'}</b></div>
+       <div>port <b>${s.port}</b></div>`
+    : '<div>nothing running</div>';
+  $('engineLog').textContent = s.engine_log || '—';
+  $('launcherLog').textContent = s.log_tail || '—';
+
+  const sy = await j('/api/system');
+  renderHardware(sy);
+  pill($('sysPill'), `VRAM ${fmt(sy.vram_free_gb)}/${fmt(sy.vram_total_gb)} · RAM ${fmt(sy.ram_free_gb)}/${fmt(sy.ram_total_gb)} GiB`);
+  updateCommand();
+}
+
+function fmt(v) { return (v === null || v === undefined) ? '?' : v; }
+function gb(v) { return (v === null || v === undefined) ? '?' : Number(v).toFixed(1); }
+
+// VRAM is the one that matters: the engine sizes its expert cache off FREE VRAM at start.
+function renderHardware(sy) {
+  const row = (label, free, total, used) => {
+    if (free === null || free === undefined || total === null || total === undefined) {
+      return `<div class="lbl">${label}</div><div class="bar"></div><div class="val">? / ? GiB</div>`;
+    }
+    const pct = Math.max(0, Math.min(100, (used / total) * 100));
+    const cls = pct >= 85 ? 'crit' : pct >= 60 ? 'hi' : '';
+    return `<div class="lbl">${label}</div>
+      <div class="bar"><i class="${cls}" style="width:${pct.toFixed(1)}%"></i></div>
+      <div class="val">${gb(free)} free of ${gb(total)} GiB
+        <span style="color:var(--text-dim)">&nbsp;(${gb(used)} held)</span></div>`;
+  };
+  $('hw').innerHTML = row('VRAM', sy.vram_free_gb, sy.vram_total_gb, sy.vram_used_gb)
+                    + row('RAM', sy.ram_free_gb, sy.ram_total_gb, sy.ram_used_gb);
+  $('hwCore').textContent = sy.cores ? sy.cores + ' cores' : '';
+  const w = $('hwWarn');
+  if (sy.vram_ok === false) {
+    w.style.display = 'block';
+    w.innerHTML = `Only ${gb(sy.vram_free_gb)} GiB VRAM free. The engine sizes its expert cache off this, ` +
+      `and a starved cache mirrors the experts into host RAM and drops it to ~35 tok/s. ` +
+      `Hit <b>Free VRAM</b> first.`;
+  } else {
+    w.style.display = 'none';
+  }
+}
+
+let _toastTimer = null;
+function showToast(title, body, isErr) {
+  $('toastTitle').textContent = title;
+  $('toastBody').textContent = body || '';
+  const t = $('toast');
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 7000);
+}
+
+async function freeVram() {
+  const btn = $('freeVramBtn');
+  btn.disabled = true;
+  btn.textContent = 'Freeing…';
+  try {
+    const r = await fetch('/api/free-vram', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
+    });
+    const d = await r.json();
+    const extra = (d.vram_free_gb !== null && d.vram_free_gb !== undefined)
+      ? ` — ${Number(d.vram_free_gb).toFixed(1)} GiB free now` : '';
+    showToast(d.success ? 'VRAM freed' : 'Free VRAM: problems', (d.message || '') + extra, !d.success);
+  } catch (e) {
+    showToast('Free VRAM failed', String(e), true);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Free VRAM';
+  refresh();
+}
+
+async function launch() { return launchWith(false); }
+
+// Launch with vision: the same request, plus vision:true, so the backend puts the image encoder in
+// the config it writes. The menu entry is disabled when the selected model has no mmproj beside its
+// shards — that is the one thing vision actually needs, so saying so up front beats a 400 later.
+async function launchWith(vision) {
+  if (!SELECTED) return;
+  const why = settingsError();
+  if (why) { alert('Launch refused — ' + why); return; }
+  if (vision && !visionAvailable()) {
+    alert('No vision encoder for ' + SELECTED.label + ' — no mmproj-*.gguf beside its shards in ' + SELECTED.dir);
+    return;
+  }
+  $('launchBtn').disabled = true;
+  const body = Object.assign({model: SELECTED.key}, collectOpts(), {vision: !!vision});
+  const d = await j('/api/launch', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+  });
+  $('launchBtn').disabled = false;
+  if (d.error) { alert(d.error); return; }
+  if (d.draft_vocab && d.draft_vocab.choice) {
+    showToast('Draft vocab: ' + d.draft_vocab.choice,
+      d.draft_vocab.already
+        ? 'rt/ already held this subset - nothing to copy'
+        : 'copied ' + (d.draft_vocab.bytes / 1024 | 0) + ' KiB into rt/draft_vocab.bin', false);
+  }
+  setTimeout(refresh, 1500);
+}
+
+async function kill() {
+  await j('/api/kill', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+  setTimeout(refresh, 1200);
+}
+
+// ---------- flags panel ----------
+let FLAGS = [];
+let activeFlags = {};        // flag -> value (true for a bare bool flag)
+
+// These four ARE the model, not a tuning knob: they decide WHICH weights load. They show in the
+// panel so you can see the truth, but they follow the model selection and cannot be typed over -
+// a stale value here silently launches different weights than the command names.
+const MODEL_OWNED = ['--pack', '--native', '--ple-gguf', '--expert-profile'];
+
+function modelIdentity(m) {
+  if (!m) { return {}; }
+  return {
+    '--pack': m.pack,
+    '--native': m.shard1,
+    '--ple-gguf': m.ple,
+    '--expert-profile': m.profile,
+  };
+}
+
+// Point the panel's model-owned flags at whichever model is selected, so what you see is the
+// model the command will actually load.
+function syncModelFlags() {
+  const id = modelIdentity(SELECTED || MODELS[0]);
+  for (const [k, v] of Object.entries(id)) {
+    if (v) { activeFlags[k] = v; } else { delete activeFlags[k]; }
+  }
+  renderFlags();
+}
+
+// Select a model from the list by key, the same way a click on its card does - so a preset that
+// names a model cannot end up half-applied (settings from one, identity flags from another).
+function selectModelByKey(key) {
+  const i = MODELS.findIndex(m => m.key === key);
+  if (i < 0) {
+    showToast('Preset model missing', 'the model ' + key + ' is not installed under ~/models', true);
+    return false;
+  }
+  document.querySelectorAll('.model').forEach(x => x.classList.remove('sel'));
+  const cards = document.querySelectorAll('.model');
+  if (cards[i]) { cards[i].classList.add('sel'); }
+  SELECTED = MODELS[i];
+  $('modelNote').textContent = MODELS[i].ready ? '' : 'Not ready yet — Launch will refuse it.';
+  return true;
+}
+
+async function loadFlags() {
+  const d = await j('/api/flags');
+  FLAGS = d.flags || [];
+  $('flagCount').textContent = FLAGS.length + ' flags';
+  renderFlags();
+}
+
+function renderFlags() {
+  const q = ($('flagSearch').value || '').toLowerCase().trim();
+  const box = $('flagList');
+  box.innerHTML = '';
+  const list = FLAGS.filter(f => !q
+    || f.flag.toLowerCase().includes(q)
+    || (f.help || '').toLowerCase().includes(q));
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-note">no flags match</div>';
+    return;
+  }
+  for (const f of list) {
+    const owned = MODEL_OWNED.includes(f.flag);      // comes from the model, not the panel
+    const on = Object.prototype.hasOwnProperty.call(activeFlags, f.flag);
+    const row = document.createElement('div');
+    row.className = 'flag-row' + (on ? ' on' : '') + (owned ? ' owned' : '');
+    row.title = f.help || '';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = on;
+    cb.disabled = owned;
+    cb.onchange = () => {
+      if (cb.checked) {
+        activeFlags[f.flag] = (f.type === 'bool') ? true
+          : (f.default || (f.type === 'select'
+              ? (f.current || (f.options || [''])[0]) : f.placeholder) || '');
+        // ticking a flag that has a builder box: take the box's figure rather than the help text's
+        // placeholder token ("T" for --spec), which the engine would reject
+        const box = FLAG_SETTING[f.flag];
+        if (box && $(box) && $(box).value !== '') { activeFlags[f.flag] = $(box).value; }
+      }
+      else delete activeFlags[f.flag];
+      renderFlags();
+      updateCommand();
+    };
+    row.appendChild(cb);
+
+    if (owned) {
+      const b = document.createElement('span');
+      b.className = 'flag-badge';
+      b.textContent = 'model';
+      b.title = 'set by the selected model — not editable here';
+      row.appendChild(b);
+    }
+
+    // Launcher-applied flags: the engine has no such option (an unknown flag makes it exit at
+    // start), so the launcher performs the action itself. Marked so nobody thinks it goes on
+    // the command line.
+    if (f.launcher) {
+      const b = document.createElement('span');
+      b.className = 'flag-badge';
+      b.textContent = 'launcher';
+      b.title = 'the launcher applies this itself (a file copy before start) — it is NOT passed to the engine';
+      row.appendChild(b);
+    }
+
+    const nm = document.createElement('span');
+    nm.className = 'flag-name';
+    nm.textContent = f.flag;
+    row.appendChild(nm);
+
+    if (f.type === 'bool') {
+      if (f.caution) {
+        const w = document.createElement('span');
+        w.className = 'flag-warn';
+        w.textContent = f.caution;
+        row.appendChild(w);
+      } else {
+        const sp = document.createElement('span');
+        sp.className = 'flag-val';
+        sp.style.border = 'none';
+        sp.style.background = 'transparent';
+        sp.style.color = 'var(--text-dim)';
+        sp.textContent = (f.help || '').slice(0, 70);
+        row.appendChild(sp);
+      }
+    } else if (f.type === 'select') {
+      const sel = document.createElement('select');
+      sel.className = 'flag-val';
+      for (const o of (f.options || [])) {
+        const opt = document.createElement('option');
+        opt.value = o; opt.textContent = o;
+        sel.appendChild(opt);
+      }
+      sel.value = on ? String(activeFlags[f.flag]) : (f.options || [''])[0];
+      sel.onchange = () => {
+        if (Object.prototype.hasOwnProperty.call(activeFlags, f.flag)) {
+          activeFlags[f.flag] = sel.value;
+          updateCommand();
+        }
+      };
+      row.appendChild(sel);
+      if (f.launcher) {
+        const n = document.createElement('span');
+        n.className = 'flag-val';
+        n.style.border = 'none';
+        n.style.background = 'transparent';
+        n.style.color = 'var(--text-dim)';
+        n.style.flex = '0 0 auto';
+        n.textContent = 'in rt/ now: ' + (f.current || '?');
+        row.appendChild(n);
+      }
+    } else {
+      const inp = document.createElement('input');
+      inp.className = 'flag-val';
+      inp.type = (f.type === 'number') ? 'text' : 'text';
+      inp.placeholder = f.placeholder || '';
+      inp.value = on ? String(activeFlags[f.flag]) : '';
+      inp.oninput = () => {
+        if (Object.prototype.hasOwnProperty.call(activeFlags, f.flag)) {
+          activeFlags[f.flag] = inp.value;
+          // the flag and its builder box are the same setting: move the box too, or the next box
+          // edit would look like a change and the panel would read one value behind
+          const box = FLAG_SETTING[f.flag];
+          if (box && $(box) && $(box).value !== inp.value) { $(box).value = inp.value; }
+          updateCommand();
+        }
+      };
+      row.appendChild(inp);
+    }
+    box.appendChild(row);
+  }
+}
+
+// ---------- command preview ----------
+function collectOpts() {
+  return {
+    context: $('context').value,
+    port: $('port').value,
+    reasoning_budget: $('reasoning_budget').value,
+    spec: $('spec').value,
+    spec_min_p: $('spec_min_p').value,
+    prefill: $('prefill').value,
+    host: $('host').value,
+    cors_origins: $('cors_origins').value.split(',').map(s => s.trim()).filter(Boolean),
+    flags: activeFlags,
+  };
+}
+
+async function updateCommand() {
+  const m = SELECTED || MODELS[0];
+  if (!m) return '';
+  const body = Object.assign({model: m.key}, collectOpts());
+  const d = await j('/api/preview', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const text = d.command || d.error || '—';
+  $('cmdOut').textContent = text;
+  $('engineArgs').textContent = (d.engine_args && d.engine_args.length)
+    ? d.engine_args.join('\n') : '—';
+  $('cfgPath').textContent = d.config_path ? '· ' + d.config_path.split('/').pop() : '';
+  return d.command || '';
+}
+
+// ---------- quick launch ----------
+const QL_KEY = 'strata-launcher-quicklaunch-presets';
+let qlPresets = [];
+try { qlPresets = JSON.parse(localStorage.getItem(QL_KEY) || '[]'); } catch (e) { qlPresets = []; }
+
+// A BUILT-IN preset ships in the code, not in localStorage. Saved presets live in the browser
+// profile, so a fresh one (a new incognito window, say) shows an empty bar - a preset that only
+// exists in one profile is invisible exactly when someone else is looking. Built-ins render first,
+// carry a mark, and cannot be deleted.
+//
+// The example below is a TEMPLATE: edit the paths and the model key for your own install. `$STRATA`
+// is the Strata repo checkout and `$MODELS` the directory holding your model installs
+// (strata-coder-iq1-m/, strata-iq2-xs/, strata-mtp/). The tuning values are the shape that measured
+// best on a 32 GB Arc-class card - whole expert set resident, native context window, speculative
+// decode on with the English draft head - but every number is a starting point, not a promise: size
+// --expert-cache to YOUR model's expert count and A/B the rest.
+const BUILTIN_PRESETS = [{
+  name: 'EXAMPLE LAUNCH',
+  kind: 'quick',
+  builtin: true,
+  model: 'coder-iq1-m',
+  desc: 'Template preset: Coder IQ1_M with the whole expert set resident, native context window, '
+      + 'speculative decode (spec 5 / min-p 0.4), the prompt-lookup drafter off and the English draft '
+      + 'head. Edit cmd + flags for your paths before using it.',
+  cmd: 'cd $STRATA && python3 sycl/serve/server_intel.py --engine strata '
+     + '--config $STRATA/strata-coder-iq1-m-launcher.json '
+     + '--tokenizer $MODELS/strata-coder-iq1-m/pack/tokenizer --port 8085',
+  settings: {context: '262144', port: '8085', reasoning_budget: '64', spec: '5',
+             spec_min_p: '0.4', prefill: '4096', host: '0.0.0.0',
+             cors_origins: 'http://localhost:3001,http://127.0.0.1:3001,'
+                         + 'http://localhost:3000,http://127.0.0.1:3000'},
+  // --draft-vocab is launcher-applied (a file copy into the shared rt/ before start, never an
+  // engine flag). Ticking it makes the preset self-contained: the English draft head comes back
+  // even on a machine whose rt/ still holds the cjk default.
+  flags: {'--expert-cache': '12288', '--kv-resident': '32768', '--vram-reserve-mib': '2048',
+          '--suffix-draft': '0', '--stream-experts': true, '--no-prefill-borrow': true,
+          '--max-context': '262144', '--spec': '5', '--spec-min-p': '0.4', '--prefill': '4096',
+          '--prompt-cache': '8', '--prompt-cache-every': '8192',
+          '--conversation-cache-mib': '4096', '--conversation-cache-slots': '4',
+          '--draft-vocab': 'en'},
+}];
+
+const B_KEY = 'strata-launcher-hidden-builtins';      // built-in names this browser has hidden
+
+function allPresets() {
+  const hidden = hiddenBuiltins();
+  return BUILTIN_PRESETS.filter(p => !hidden.includes(p.name)).concat(qlPresets);
+}
+
+function openQuickLaunch() {
+  const ta = $('quickLaunchInput');
+  if (!ta.value.trim()) {
+    const cur = $('cmdOut').textContent;
+    ta.value = (cur && cur !== '—') ? cur : '';
+  }
+  renderPresets();
+  $('quickLaunchError').classList.remove('show');
+  $('quickLaunchModal').classList.add('show');
+  ta.focus();
+}
+
+function closeQuickLaunch() {
+  $('quickLaunchModal').classList.remove('show');
+}
+
+function savePresets() {
+  localStorage.setItem(QL_KEY, JSON.stringify(qlPresets));
+}
+
+// Everything the builder can be in: settings + every ticked flag.
+function currentSettings() {
+  return {
+    context: $('context').value,
+    port: $('port').value,
+    reasoning_budget: $('reasoning_budget').value,
+    spec: $('spec').value,
+    spec_min_p: $('spec_min_p').value,
+    prefill: $('prefill').value,
+    host: $('host').value,
+    cors_origins: $('cors_origins').value,
+  };
+}
+
+// A preset never carries the model's identity flags. They belong to whichever model is selected
+// when you load it, so storing them would freeze one model's paths into a preset you might load
+// against another - the mismatch that pointed an IQ2_XS command at the Coder's weights.
+function savedFlags() {
+  const out = {};
+  for (const [k, v] of Object.entries(activeFlags)) {
+    if (!MODEL_OWNED.includes(k)) { out[k] = v; }
+  }
+  return out;
+}
+
+// A preset saved from Quick Launch carries only the command text, and the flags live in the
+// config file that command points at. So adopt them at SAVE time as well as load time: the
+// Flags panel ticks up on save (you can see what you captured) and the saved preset stands on
+// its own instead of depending on that config still being on disk later.
+async function addPreset(name, kind, cmd) {
+  if (cmd) {
+    const m = cmd.match(/--config\s+(\S+)/);
+    if (m) {
+      const d = await j('/api/readconfig?path=' + encodeURIComponent(m[1]));
+      if (d && !d.error) {
+        activeFlags = Object.assign({}, activeFlags, d.flags || {});   // config wins
+        applySettings(d.settings);
+        if (d.model_name) { $('modelNote').textContent = 'loaded from ' + d.model_name; }
+        renderFlags();
+        updateCommand();
+      } else if (d && d.error) {
+        showToast('Preset saved WITHOUT flags', d.error, true);
+      }
+    }
+  }
+  qlPresets.push({
+    name: name,
+    kind: kind,                                   // 'builder' | 'quick'
+    cmd: cmd || '',
+    settings: currentSettings(),
+    flags: savedFlags(),                          // model identity excluded
+  });
+  savePresets();
+  renderPresets();
+}
+
+async function saveBuilderPreset() {
+  const name = prompt('Preset name:', $('context').value + ' ctx' +
+    (Object.keys(activeFlags).length ? ' + ' + Object.keys(activeFlags).length + ' flags' : ''));
+  if (!name) { return; }
+  await addPreset(name, 'builder', '');
+}
+
+const SETTING_KEYS = ['context', 'port', 'reasoning_budget', 'spec', 'spec_min_p', 'prefill', 'host', 'cors_origins'];
+
+function applySettings(s) {
+  if (!s) { return; }
+  for (const k of SETTING_KEYS) {
+    const el = $(k);
+    if (el && s[k] !== undefined && s[k] !== null && s[k] !== '') { el.value = s[k]; }
+  }
+}
+
+// Restore a preset: settings first, then every flag. A command preset points at a config
+// file and the flags live IN that config, so read it back and adopt them — otherwise loading
+// a command preset restores nothing but text (which is exactly what it used to do).
+//
+// The MODEL SELECTION is untouched: presets carry settings and tuning flags, and the four
+// identity flags stay with whichever model is selected in the list. syncModelFlags() at the end
+// re-asserts that, because the config just read may name a different model's pack/paths.
+async function applyPreset(p) {
+  activeFlags = Object.assign({}, p.flags || {});
+  applySettings(p.settings);
+  // A built-in names the model it was measured on, so loading it also selects that model - the
+  // whole point of the preset is that one click reproduces the launch, weights included.
+  if (p.model) { selectModelByKey(p.model); }
+
+  if (p.cmd) {
+    $('quickLaunchInput').value = p.cmd;          // keep it loaded; do not pop the modal open
+    const m = p.cmd.match(/--config\s+(\S+)/);
+    if (m) {
+      const d = await j('/api/readconfig?path=' + encodeURIComponent(m[1]));
+      if (d && !d.error) {
+        activeFlags = Object.assign(activeFlags, d.flags || {});
+        applySettings(d.settings);                // the referenced config is authoritative
+        $('modelNote').textContent = d.model_name
+          ? ('flags from ' + d.model_name + ' — model list unchanged')
+          : '';
+      } else if (d && d.error) {
+        showToast('Preset config not readable', d.error, true);
+      }
+    }
+  }
+  syncModelFlags();                               // identity follows the selected model
+  updateLaunchMenu();
+  updateCommand();
+}
+
+// One store, two views: the modal list and the presets bar. Both show built-ins first (they are
+// not in qlPresets and have no delete control) followed by whatever is saved in this browser.
+function renderPresets() {
+  const all = allPresets();
+  const box = $('qlPresets');
+  box.innerHTML = '';
+  const rh = $('qlRestore');
+  if (rh) { rh.style.display = hiddenBuiltins().length ? 'block' : 'none'; }
+  all.forEach((p, i) => {
+    const built = !!p.builtin;
+    const el = document.createElement('span');
+    el.className = 'ql-preset-pill' + (built ? ' builtin' : '');
+    el.innerHTML = `<span class="pill-body"><span class="nm"></span>`
+      + `<span class="pill-kind">${built ? 'built-in · ' : ''}${p.model === 'iq2-xs' ? 'IQ2_XS' : (p.model === 'coder-iq1-m' ? 'Coder' : (p.model || 'any model'))}${p.vision ? ' · vision' : ''}</span></span>`
+      + (built ? `<span class="x bhide" title="built-in from the code — hides it in this browser">✕</span>`
+               : `<span class="x" title="delete">✕</span>`);
+    el.querySelector('.nm').textContent = p.name;
+    el.title = p.desc || p.cmd || '';
+    el.querySelector('.nm').onclick = () => { $('quickLaunchInput').value = p.cmd; };
+    el.querySelector('.x').onclick = (ev) => { ev.stopPropagation(); deletePill(i); };
+    box.appendChild(el);
+  });
+
+  const bar = $('pillsContainer');
+  bar.innerHTML = '';
+  if (!all.length) {
+    bar.innerHTML = '<span class="empty-note">no presets saved yet</span>';
+    checkScrollArrows(bar, $('pillsLeft'), $('pillsRight'));
+    return;
+  }
+  all.forEach((p, i) => {
+    const built = !!p.builtin;
+    const el = document.createElement('span');
+    el.className = 'launch-pill' + (window.__activePill === i ? ' active' : '')
+                 + (built ? ' builtin' : '');
+    const nFlags = Object.keys(p.flags || {}).length;
+    const marks = [built ? 'built-in' : (p.cmd ? 'cmd' : 'set')];
+    if (p.model) { marks.push(p.model === 'iq2-xs' ? 'IQ2_XS' : (p.model === 'coder-iq1-m' ? 'Coder' : p.model)); }
+    if (p.vision) { marks.push('vision'); }
+    if (nFlags) { marks.push(nFlags + 'f'); }
+    el.innerHTML = `<span class="pill-body"><span class="nm"></span>`
+      + `<span class="pill-kind">${marks.join(' · ')}</span></span>`
+      + `<span class="pill-delete" title="${built ? 'hide this built-in in this browser' : 'delete'}">✕</span>`;
+    el.querySelector('.nm').textContent = p.name;
+    el.title = [
+      p.desc || '',
+      p.cmd ? 'command preset:\n' + p.cmd : 'settings preset',
+      'context ' + ((p.settings || {}).context || '?'),
+      nFlags ? 'flags: ' + Object.keys(p.flags).join(' ') : 'no flags ticked',
+    ].filter(Boolean).join('\n');
+    el.querySelector('.nm').onclick = () => loadPill(i);
+    el.querySelector('.pill-delete').onclick = (ev) => {
+      ev.stopPropagation();
+      deletePill(i);
+    };
+    bar.appendChild(el);
+  });
+  checkScrollArrows(bar, $('pillsLeft'), $('pillsRight'));
+}
+
+function loadPill(i) {
+  const p = allPresets()[i];
+  if (!p) { return; }
+  window.__activePill = i;
+  applyPreset(p);
+  renderPresets();
+}
+
+// Deleting a preset. Built-ins can be HIDDEN, not destroyed: the entry is code, so a delete that
+// really removed it would come back on the next reload and look broken. Hidden names live in
+// localStorage (B_HIDDEN() below) and renderPresets() filters them out, so an X on a built-in makes it
+// disappear for good from this browser while the code stays intact - and "Restore built-ins" in the
+// Quick Launch modal brings them back.
+function hiddenBuiltins() {
+  try { return JSON.parse(localStorage.getItem(B_KEY) || '[]'); } catch (_) { return []; }
+}
+function saveHiddenBuiltins(list) {
+  try { localStorage.setItem(B_KEY, JSON.stringify(list)); } catch (_) {}
+}
+function deletePill(i) {
+  const all = allPresets();
+  const p = all[i];
+  if (!p) { return; }
+  if (p.builtin) {
+    const hidden = hiddenBuiltins();
+    if (!hidden.includes(p.name)) { hidden.push(p.name); }
+    saveHiddenBuiltins(hidden);
+    if (window.__activePill === i) { window.__activePill = -1; }
+    renderPresets();
+    showToast('Built-in hidden', p.name + ' is hidden in this browser. "Restore built-ins" in Quick '
+              + 'Launch brings it back.');
+    return;
+  }
+  const builtins = all.filter(x => x.builtin).length;
+  qlPresets.splice(i - builtins, 1);
+  if (window.__activePill === i) { window.__activePill = -1; }
+  savePresets();
+  renderPresets();
+}
+
+function restoreBuiltins() {
+  saveHiddenBuiltins([]);
+  renderPresets();
+  showToast('Built-ins restored', allPresets().filter(p => p.builtin).length + ' built-in presets back');
+}
+
+function scrollPills(dir) {
+  const c = $('pillsContainer');
+  c.scrollLeft += dir * 180;
+  setTimeout(() => checkScrollArrows(c, $('pillsLeft'), $('pillsRight')), 220);
+}
+
+function checkScrollArrows(container, leftBtn, rightBtn) {
+  const overflows = container.scrollWidth > container.clientWidth + 2;
+  const atLeft = container.scrollLeft <= 2;
+  const atRight = container.scrollLeft + container.clientWidth >= container.scrollWidth - 2;
+  leftBtn.classList.toggle('hidden', !overflows || atLeft);
+  rightBtn.classList.toggle('hidden', !overflows || atRight);
+}
+
+async function saveQuickLaunchPreset() {
+  const cmd = $('quickLaunchInput').value.trim();
+  if (!cmd) { return; }
+  let name = prompt('Preset name:', (cmd.match(/--config\s+(\S+)/) || [])[1]
+    ? (cmd.match(/--config\s+(\S+)/)[1].split('/').pop().replace(/\.json$/, ''))
+    : cmd.split(/\s+/).slice(0, 4).join(' '));
+  if (!name) { return; }
+  // goes through the same store, so it also carries the settings and flags in force now —
+  // and addPreset pulls the flags out of the config this command points at, so saving from
+  // Quick Launch ticks the Flags panel instead of storing an empty set.
+  await addPreset(name, 'quick', cmd);
+}
+
+async function quickLaunchGo() {
+  const cmd = $('quickLaunchInput').value.trim();
+  const err = $('quickLaunchError');
+  err.classList.remove('show');
+  if (!cmd) { err.textContent = 'nothing to launch'; err.classList.add('show'); return; }
+  $('quickLaunchGoBtn').disabled = true;
+  const d = await j('/api/quicklaunch', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({cmd: cmd, port: $('port').value})
+  });
+  $('quickLaunchGoBtn').disabled = false;
+  if (d.error) { err.textContent = d.error; err.classList.add('show'); return; }
+  closeQuickLaunch();
+  setTimeout(() => { refresh(); }, 1500);
+}
+
+// Esc closes the modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeQuickLaunch();
+});
+
+async function refreshModels() {
+  await loadModels();
+  const n = MODELS.length;
+  showToast('Models refreshed', n + ' install' + (n === 1 ? '' : 's') + ' under ~/models');
+  updateCommand();
+}
+
+async function copyCommand() {
+  // Re-render first: the panel is the source the clipboard is taken from, and it can lag a box that
+  // was just edited. Cheap (one local preview) and it makes Copy match what Launch would run.
+  await updateCommand();
+  const cmd = ($('cmdOut').textContent || '').trim();
+  const args = ($('engineArgs').textContent || '').trim();
+  if (!cmd || cmd === '\u2014') {
+    showToast('Nothing to copy', 'No command yet - select a model first.', true);
+    return;
+  }
+  let text = cmd;
+  if (args && args !== '\u2014') {
+    text += '\n\n# engine flags (from the config file)\n' + args;
+  }
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; }
+  catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (e2) { ok = false; }
+  }
+  if (ok) showToast('Command copied', 'Command' + (text.indexOf('# engine flags') > -1 ? ' + engine flags' : '') +
+                    ' on the clipboard - paste it into chat.');
+  else showToast('Copy failed', 'Clipboard blocked - select the text and copy by hand.', true);
+}
+
+// Whether the SELECTED model has an image encoder: an mmproj GGUF beside its shards. That is what
+// serve/server.py hands `strata-vision`, so it is also the honest test for the menu entry.
+function visionAvailable() {
+  const m = SELECTED || MODELS[0];
+  return !!(m && m.mmproj);
+}
+
+// Refresh the menu's state whenever the model selection or the page changes: an entry that cannot
+// work must SAY so (greyed, with the reason) instead of failing after the click.
+function updateLaunchMenu() {
+  const ok = visionAvailable();
+  const item = $('lmVision');
+  const sub = $('lmVisionSub');
+  if (!item) { return; }
+  item.classList.toggle('unavailable', !ok);
+  sub.textContent = ok
+    ? 'images too — ' + ((SELECTED || MODELS[0] || {}).mmproj || '').split('/').pop()
+    : 'no mmproj for this model — not available';
+}
+
+$('launchBtn').onclick = launch;
+$('killBtn').onclick = kill;
+$('refreshBtn').onclick = () => { updateCommand(); refresh(); };
+
+// The engine's own numbers (cache slots, mirrored experts, draft-head size, tok/s, acceptance) live
+// in engine.log, which the NEXT launch truncates - so they get snapshotted into stats.csv, and this
+// button is the manual pass. The toast is deliberately just the count: the table is stats.md.
+async function showStats() {
+  const d = await j('/api/stats');
+  if (!d || d.ok === false) {
+    showToast('Stats failed', (d && d.output) || 'run: python3 stats_log.py', true);
+    return;
+  }
+  const m = (d.output || '').match(/appended (\d+) new/);
+  showToast('Stats logged', (m ? m[1] + ' new row(s), ' : '') + d.rows_total +
+            ' rows in stats.csv · also stats.md');
+}
+
+// The eight builder boxes and the Flags panel are two views of the same launch, and build_config
+// lets a TICKED flag override the template - so a flag left behind would silently win. Two rules
+// keep them agreeing:
+//   1. every box edit re-renders the Command panel (it used to keep the last render, so you could
+//      type spec 5 and copy a command that still said 4), and
+//   2. the four boxes that ARE engine flags write their figure into that flag, ticked and visible.
+// The reverse holds too: editing the flag moves the box (see renderFlags).
+const SETTING_FLAG = {
+  context: '--max-context',
+  spec: '--spec',
+  spec_min_p: '--spec-min-p',
+  prefill: '--prefill',
+};
+const FLAG_SETTING = Object.fromEntries(Object.entries(SETTING_FLAG).map(([k, v]) => [v, k]));
+
+// Bounds for the numeric boxes. A number input happily holds "05", and the launcher passed a box
+// value through verbatim — so a box reading 05 became `--spec-min-p 5` in the config, the engine
+// could never clear a draft at min-p 5, and the launch ran at 33 tok/s with "drafts accepted 0 of 0"
+// (measured 2026-10-06 on a launch that dropped to about 35 tok/s). Out-of-range now
+// REFUSES instead of launching: the box turns red and Launch says why.
+const SETTING_BOUNDS = {
+  context:          {min: 1024, max: 1048576, label: 'context'},
+  port:             {min: 1, max: 65535, step: 1, label: 'port'},
+  reasoning_budget: {min: 0, max: 32768, step: 1, label: 'thinking budget'},
+  spec:             {min: 0, max: 32, step: 1, label: 'spec n-max', hint: 'a count of drafted tokens (4 = 4 drafts + the bonus), so whole numbers only'},
+  spec_min_p:       {min: 0, max: 1, label: 'spec min-p', hint: 'the lowest draft probability worth taking (0.5 = half)'},
+  prefill:          {min: 0, max: 32768, label: 'prefill chunk'},
+};
+
+// '' is not an error (an empty box means "leave the template's value alone"); anything else must be a
+// finite number inside its bound, and comes back canonical (05 -> 5, 0.50 -> 0.5). A setting with NO
+// bounds entry is free text (host, cors origins) - validating those as numbers is how "host 0.0.0.0"
+// once blocked a launch.
+function checkSetting(key, raw) {
+  const b = SETTING_BOUNDS[key];
+  const s = String(raw == null ? '' : raw).trim();
+  if (!b) { return {ok: true, value: s}; }
+  if (s === '') { return {ok: true, value: ''}; }
+  const n = Number(s);
+  if (!Number.isFinite(n)) { return {ok: false, why: b.label + ' must be a number (it reads ' + s + ')'}; }
+  if (n < b.min || n > b.max) {
+    return {ok: false, why: b.label + ' must be between ' + b.min + ' and ' + b.max + ' (it reads ' + n + ')'};
+  }
+  if (b.step && Math.abs(n - Math.round(n)) > 1e-9) {
+    return {ok: false, why: b.label + ' must be a whole number — ' + (b.hint || '')};
+  }
+  return {ok: true, value: String(n)};
+}
+
+function markSetting(key, why) {
+  const el = $(key);
+  if (!el) { return; }
+  if (why) { el.classList.add('bad'); el.title = why; } else { el.classList.remove('bad'); el.removeAttribute('title'); }
+}
+
+// Every box checked at once - what Launch and the Command panel read.
+function settingsError() {
+  for (const k of SETTING_KEYS) {
+    const el = $(k);
+    if (!el) { continue; }
+    const c = checkSetting(k, el.value);
+    if (!c.ok) { return c.why; }
+  }
+  return '';
+}
+
+let cmdTimer = null;
+function scheduleCommand() { clearTimeout(cmdTimer); cmdTimer = setTimeout(updateCommand, 150); }
+
+// Only flags the catalogue knows: a typo must never invent an argument the engine would reject at
+// start (it exits on an unknown option, which shows up only as "the engine exited before it was
+// ready"). An emptied box unticks the flag instead of sending a blank value, and a box outside its
+// bounds writes NOTHING - the launch is blocked until it is fixed.
+function flagFromSetting(key, value) {
+  const flag = SETTING_FLAG[key];
+  if (!flag || !FLAGS.some(f => f.flag === flag)) { return; }
+  const c = checkSetting(key, value);
+  if (!c.ok) { markSetting(key, c.why); return; }
+  markSetting(key, '');
+  if (c.value === '') { delete activeFlags[flag]; } else { activeFlags[flag] = c.value; }
+  renderFlags();
+}
+
+for (const k of SETTING_KEYS) {
+  const el = $(k);
+  if (!el) { continue; }
+  el.addEventListener('input', () => { flagFromSetting(k, el.value); scheduleCommand(); });
+  el.addEventListener('change', () => {
+    // canonicalise on blur so what the box SAYS is what the launch uses (05 -> 5, 0.50 -> 0.5) - a
+    // silently different number is how a launch ended up at 33 tok/s
+    const c = checkSetting(k, el.value);
+    if (c.ok && c.value !== '' && c.value !== el.value) { el.value = c.value; }
+    flagFromSetting(k, el.value);
+    scheduleCommand();
+  });
+}
+
+loadModels().then(() => { loadFlags(); updateCommand(); refresh(); renderPresets(); });
+setInterval(refresh, 4000);
+window.addEventListener('resize', () => checkScrollArrows($('pillsContainer'), $('pillsLeft'), $('pillsRight')));
+</script>
+</body>
+</html>
