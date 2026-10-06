@@ -21,7 +21,7 @@ header{
   position:sticky; top:0; z-index:5;
 }
 header img{width:34px; height:34px; border-radius:7px}
-.appver{font-size:10px;font-weight:500;color:var(--text-dim);letter-spacing:.04em;margin-left:3px;vertical-align:1px}
+.appver{font-size:11px;font-weight:500;color:var(--text-dim);letter-spacing:.04em;font-variant-numeric:tabular-nums}
 h1{font-size:15px; margin:0; font-weight:600; letter-spacing:.2px}
 .spacer{flex:1}
 .pill{
@@ -279,11 +279,12 @@ pre{
 <body>
 <header>
   <img src="strata-256.png" alt="">
-  <h1>Strata Launcher <span class="appver">v1.2</span></h1>
+  <h1>Strata Launcher</h1>
   <span class="pill" id="enginePill">engine …</span>
   <span class="pill" id="serverPill">server down</span>
   <div class="spacer"></div>
   <span class="pill" id="sysPill">—</span>
+  <span class="appver" id="appVer">1.2.0</span>
 </header>
 
 <main>
@@ -816,38 +817,7 @@ try { qlPresets = JSON.parse(localStorage.getItem(QL_KEY) || '[]'); } catch (e) 
 // profile, so a fresh one (a new incognito window, say) shows an empty bar - a preset that only
 // exists in one profile is invisible exactly when someone else is looking. Built-ins render first,
 // carry a mark, and cannot be deleted.
-//
-// The example below is a TEMPLATE: edit the paths and the model key for your own install. `$STRATA`
-// is the Strata repo checkout and `$MODELS` the directory holding your model installs
-// (strata-coder-iq1-m/, strata-iq2-xs/, strata-mtp/). The tuning values are the shape that measured
-// best on a 32 GB Arc-class card - whole expert set resident, native context window, speculative
-// decode on with the English draft head - but every number is a starting point, not a promise: size
-// --expert-cache to YOUR model's expert count and A/B the rest.
-const BUILTIN_PRESETS = [{
-  name: 'EXAMPLE LAUNCH',
-  kind: 'quick',
-  builtin: true,
-  model: 'coder-iq1-m',
-  desc: 'Template preset: Coder IQ1_M with the whole expert set resident, native context window, '
-      + 'speculative decode (spec 5 / min-p 0.4), the prompt-lookup drafter off and the English draft '
-      + 'head. Edit cmd + flags for your paths before using it.',
-  cmd: 'cd $STRATA && python3 sycl/serve/server_intel.py --engine strata '
-     + '--config $STRATA/strata-coder-iq1-m-launcher.json '
-     + '--tokenizer $MODELS/strata-coder-iq1-m/pack/tokenizer --port 8085',
-  settings: {context: '262144', port: '8085', reasoning_budget: '64', spec: '5',
-             spec_min_p: '0.4', prefill: '4096', host: '0.0.0.0',
-             cors_origins: 'http://localhost:3001,http://127.0.0.1:3001,'
-                         + 'http://localhost:3000,http://127.0.0.1:3000'},
-  // --draft-vocab is launcher-applied (a file copy into the shared rt/ before start, never an
-  // engine flag). Ticking it makes the preset self-contained: the English draft head comes back
-  // even on a machine whose rt/ still holds the cjk default.
-  flags: {'--expert-cache': '12288', '--kv-resident': '32768', '--vram-reserve-mib': '2048',
-          '--suffix-draft': '0', '--stream-experts': true, '--no-prefill-borrow': true,
-          '--max-context': '262144', '--spec': '5', '--spec-min-p': '0.4', '--prefill': '4096',
-          '--prompt-cache': '8', '--prompt-cache-every': '8192',
-          '--conversation-cache-mib': '4096', '--conversation-cache-slots': '4',
-          '--draft-vocab': 'en'},
-}];
+const BUILTIN_PRESETS = [];
 
 const B_KEY = 'strata-launcher-hidden-builtins';      // built-in names this browser has hidden
 

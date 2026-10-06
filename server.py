@@ -618,7 +618,7 @@ def probe(port: int) -> dict:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "StrataLauncher/1.2"
+    server_version = "StrataLauncher/1.2.0"
 
     def log_message(self, *a):  # keep the console quiet
         pass

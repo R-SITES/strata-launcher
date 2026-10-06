@@ -61,19 +61,20 @@ Or just `./launch.sh`, which probes the port first and opens the browser.
 - **Quick Launch** — paste or type a full command; the launcher prepends the oneAPI environment so a
   hand-typed Strata command works.
 - **Presets** — save a full launch state (settings + every ticked flag) as a pill; click to restore,
-  ✕ to delete. A built-in example preset ships in the code so a fresh browser profile still has one.
+  ✕ to delete. Saved presets live in the browser profile, so they are per-browser; the built-in mechanism
+  (a preset defined in the code, so it exists in every profile) is present and currently ships empty — add
+  your own to `BUILTIN_PRESETS` in `index.html` if you want one that survives a fresh profile.
 - **Stats** — a per-launch and per-request record read back from the engine log.
 - **Free VRAM** — unloads other GPU tenants (ComfyUI, ACE-Step, vLLM) so the expert cache gets the whole
   card; on this engine that is the difference between a fast and a starved launch.
 - **Hardware panel** — live VRAM/RAM bars.
 
-## A note on the example preset
+## A note on tuning
 
-`EXAMPLE LAUNCH` in `index.html` is a template. Edit `$STRATA` and `$MODELS` to your paths and pick the
-model key that matches your install. The tuning values (whole expert set resident, native context window,
-speculative decode with the English draft head) are the shape that measured best on a 32 GB Arc-class card,
-but treat every number as a starting point: size `--expert-cache` to **your** model's expert count and A/B
-the rest on your own hardware.
+The tuning values that measured best on a 32 GB Arc-class card (whole expert set resident, native context
+window, speculative decode with the English draft head) are worth starting from, but treat every number as a
+starting point: size `--expert-cache` to **your** model's expert count and A/B the rest on your own hardware.
+The flag panel's help text and the engine's own `--help` are the authority on what each flag does.
 
 ## API endpoints
 
